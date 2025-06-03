@@ -19,10 +19,4 @@ export class AuthController {
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
-
-  @Public()
-  @Post('google-auth')
-  googleAuth(@Body('id_token') id_token: string) {
-    return this.authService.googleAuth(id_token);
-  }
 }

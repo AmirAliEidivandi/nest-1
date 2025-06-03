@@ -24,7 +24,6 @@ export class AuthService {
   async register(
     registerDto: RegisterDto,
   ): Promise<{ access_token: string; refresh_token: string }> {
-    console.log(registerDto);
     const { email, username, password, confirmPassword, firstName, lastName } =
       registerDto;
 
@@ -169,77 +168,5 @@ export class AuthService {
       access_token: tokens.access_token['token'],
       refresh_token: tokens.refresh_token['token'],
     };
-  }
-
-  async googleAuth(id_token: string) {
-    try {
-      // Get the token endpoint URL from config
-      const keycloakHost = this.configService.get('KEYCLOAK_HOST');
-      const keycloakRealm = this.configService.get('KEYCLOAK_REALM');
-      const clientId = this.configService.get('KEYCLOAK_CLIENT_ID');
-      const clientSecret = this.configService.get('KEYCLOAK_SECRET');
-      console.log(keycloakHost, keycloakRealm, clientId, clientSecret);
-      // Validate configuration
-      if (!keycloakHost || !keycloakRealm || !clientId || !clientSecret) {
-        throw new BadRequestException('Missing Keycloak configuration');
-      }
-
-      const tokenEndpoint = `${keycloakHost}/realms/${keycloakRealm}/protocol/openid-connect/token`;
-
-      // Create form data for token exchange
-      const formData = new URLSearchParams();
-      formData.append(
-        'grant_type',
-        'urn:ietf:params:oauth:grant-type:token-exchange',
-      );
-      formData.append('client_id', clientId);
-      formData.append('client_secret', clientSecret);
-      formData.append('subject_token', id_token);
-      formData.append(
-        'subject_token_type',
-        'urn:ietf:params:oauth:token-type:access_token',
-      );
-      formData.append('subject_issuer', 'google');
-
-      console.log('Token exchange request data:', {
-        endpoint: tokenEndpoint,
-        clientId: clientId,
-        // Don't log the client secret for security
-      });
-
-      // Make the token exchange request
-      const response = await fetch(tokenEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData,
-      });
-
-      // Parse the response
-      const data = await response.json();
-
-      if (data.error) {
-        console.error('Token exchange error:', data);
-        throw new BadRequestException(
-          data.error_description || 'Failed to authenticate with Google',
-        );
-      }
-
-      // Create or find user in our database if needed
-      // This would typically involve extracting user info from the token
-      // and creating a user record if one doesn't exist
-
-      return {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_in: data.expires_in,
-      };
-    } catch (error) {
-      console.error('Google auth error:', error);
-      throw new BadRequestException(
-        error.message || 'Failed to authenticate with Google',
-      );
-    }
   }
 }

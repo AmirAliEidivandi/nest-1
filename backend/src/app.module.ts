@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   AuthGuard,
@@ -26,21 +25,6 @@ import { SharedModule } from './shared/shared.module';
       useExisting: KeycloakConfigService,
       imports: [KeycloakConfigModule],
     }),
-    ClientsModule.register([
-      {
-        name: 'KAFKA_SERVICE',
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: 'nest1-client',
-            brokers: ['localhost:9092'],
-          },
-          consumer: {
-            groupId: 'nest1-consumer',
-          },
-        },
-      },
-    ]),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -1,3 +1,4 @@
+import AdminClient from '@keycloak/keycloak-admin-client';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -167,6 +168,29 @@ export class AuthService {
     return {
       access_token: tokens.access_token['token'],
       refresh_token: tokens.refresh_token['token'],
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    const c = {
+      realmName: this.configService.get('KEYCLOAK_REALM'),
+      baseUrl: this.configService.get('KEYCLOAK_HOST'),
+    };
+    const adminClient = new AdminClient(c);
+    await adminClient
+      .auth({
+        grantType: 'refresh_token',
+        clientId: this.configService.get('KEYCLOAK_CLIENT_ID') as string,
+        clientSecret: this.configService.get('KEYCLOAK_SECRET'),
+        refreshToken: refreshToken,
+      })
+      .catch((error) => {
+        console.log(error);
+        throw new BadRequestException(error);
+      });
+    return {
+      access_token: await adminClient.getAccessToken(),
+      refresh_token: adminClient.refreshToken,
     };
   }
 }

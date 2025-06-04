@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Eye, EyeOff } from "lucide-react";
-import { InputHTMLAttributes, forwardRef, useState } from "react";
+import { type InputHTMLAttributes, forwardRef, useState } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

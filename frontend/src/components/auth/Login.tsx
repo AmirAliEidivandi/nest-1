@@ -1,19 +1,20 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Lock, Mail, ShoppingBag } from "lucide-react";
+import { Lock, ShoppingBag, User } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import * as yup from "yup";
+import { useAuth } from "../../contexts/AuthContext";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 
-// Validation schema
+// Validation schema - Updated to match backend requirements
 const loginSchema = yup.object({
-  email: yup
+  username: yup
     .string()
-    .required("ایمیل الزامی است")
-    .email("فرمت ایمیل صحیح نیست"),
+    .required("نام کاربری الزامی است")
+    .min(3, "نام کاربری باید حداقل ۳ کاراکتر باشد"),
   password: yup
     .string()
     .required("رمز عبور الزامی است")
@@ -25,6 +26,7 @@ type LoginFormData = yup.InferType<typeof loginSchema>;
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const {
     register,
@@ -38,31 +40,20 @@ const Login = () => {
     try {
       setIsLoading(true);
 
-      // TODO: Replace with actual API call
-      console.log("Login data:", data);
+      // Call the login function from AuthContext
+      await login(data.username, data.password);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulate successful login
       toast.success("ورود با موفقیت انجام شد! 🎉");
-
-      // Save user data to localStorage (temporary)
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: 1,
-          name: "کاربر تست",
-          email: data.email,
-          role: "admin",
-        })
-      );
 
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (error) {
-      toast.error("خطا در ورود! لطفاً دوباره تلاش کنید.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "خطا در ورود! لطفاً دوباره تلاش کنید.";
+
+      toast.error(errorMessage);
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
@@ -85,13 +76,13 @@ const Login = () => {
       {/* Login Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <Input
-          {...register("email")}
-          label="ایمیل"
-          type="email"
-          placeholder="example@domain.com"
-          error={errors.email?.message}
-          icon={<Mail />}
-          autoComplete="email"
+          {...register("username")}
+          label="نام کاربری"
+          type="text"
+          placeholder="نام کاربری خود را وارد کنید"
+          error={errors.username?.message}
+          icon={<User />}
+          autoComplete="username"
         />
 
         <Input

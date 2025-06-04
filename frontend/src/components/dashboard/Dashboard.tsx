@@ -13,20 +13,57 @@ import {
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import Button from "../ui/Button";
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-
-  // Get user data from localStorage
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("user");
+    logout();
     toast.success("خروج با موفقیت انجام شد");
     navigate("/auth/login");
+  };
+
+  // Helper function to get user display name
+  const getUserDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user?.username || "کاربر عزیز";
+  };
+
+  // Helper function to get user initials
+  const getUserInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`;
+    }
+    if (user?.username) {
+      return user.username.charAt(0).toUpperCase();
+    }
+    return "ک";
+  };
+
+  // Helper function to get user role display
+  const getUserRoleDisplay = () => {
+    if (user?.roles && user.roles.length > 0) {
+      // Convert technical role names to user-friendly Persian names
+      const roleMapping: { [key: string]: string } = {
+        USER_PROFILE_VIEW_SELF: "کاربر",
+        USER_PROFILE_EDIT_SELF: "کاربر",
+        ADMIN: "مدیر",
+        MANAGER: "مدیر",
+        MODERATOR: "ناظر",
+        SELLER: "فروشنده",
+        CUSTOMER: "مشتری",
+      };
+
+      const firstRole = user.roles[0].title;
+      return roleMapping[firstRole] || "کاربر";
+    }
+    return "کاربر";
   };
 
   const stats = [
@@ -93,22 +130,26 @@ const Dashboard = () => {
         </div>
 
         <nav className="mt-8">
+          {/* User Profile Section */}
           <div className="px-6 mb-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-medium">
-                    {userData.name?.charAt(0) || "ک"}
+                  <span className="text-blue-600 font-medium text-sm">
+                    {getUserInitials()}
                   </span>
                 </div>
               </div>
-              <div className="mr-3">
-                <p className="text-sm font-medium text-gray-900">
-                  {userData.name || "کاربر"}
+              <div className="mr-3 flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {getUserDisplayName()}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {userData.role === "admin" ? "مدیر" : "کاربر"}
+                <p className="text-xs text-gray-500 truncate">
+                  {getUserRoleDisplay()}
                 </p>
+                {user?.email && (
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                )}
               </div>
             </div>
           </div>
@@ -173,6 +214,17 @@ const Dashboard = () => {
               <button className="p-2 text-gray-400 hover:text-gray-500">
                 <Bell className="h-6 w-6" />
               </button>
+              {/* User info in header for desktop */}
+              <div className="hidden md:flex items-center">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 font-medium text-xs">
+                    {getUserInitials()}
+                  </span>
+                </div>
+                <span className="mr-2 text-sm font-medium text-gray-700">
+                  {getUserDisplayName()}
+                </span>
+              </div>
             </div>
           </div>
         </header>
@@ -182,11 +234,43 @@ const Dashboard = () => {
           {/* Welcome Message */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              خوش آمدید، {userData.name || "کاربر عزیز"}! 👋
+              خوش آمدید، {getUserDisplayName()}! 👋
             </h2>
             <p className="text-gray-600">
               آمار و اطلاعات مهم فروشگاه شما در اینجا نمایش داده می‌شود.
             </p>
+            {/* User Details Card */}
+            {user && (
+              <div className="mt-4 bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  اطلاعات کاربری
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">
+                      نام کاربری
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {user.username}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">
+                      ایمیل
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">
+                      نام کامل
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {user.firstName} {user.lastName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Stats Grid */}

@@ -1,14 +1,15 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Lock, Mail, Phone, ShoppingBag, User } from "lucide-react";
+import { Lock, Mail, ShoppingBag, User } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import * as yup from "yup";
+import { useAuth } from "../../contexts/AuthContext";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 
-// Validation schema
+// Validation schema - Updated to match backend requirements
 const registerSchema = yup.object({
   firstName: yup
     .string()
@@ -22,10 +23,10 @@ const registerSchema = yup.object({
     .string()
     .required("ایمیل الزامی است")
     .email("فرمت ایمیل صحیح نیست"),
-  phone: yup
+  username: yup
     .string()
-    .required("شماره موبایل الزامی است")
-    .matches(/^09\d{9}$/, "فرمت شماره موبایل صحیح نیست"),
+    .required("نام کاربری الزامی است")
+    .min(3, "نام کاربری باید حداقل ۳ کاراکتر باشد"),
   password: yup
     .string()
     .required("رمز عبور الزامی است")
@@ -38,7 +39,10 @@ const registerSchema = yup.object({
     .string()
     .required("تکرار رمز عبور الزامی است")
     .oneOf([yup.ref("password")], "رمز عبور و تکرار آن باید یکسان باشند"),
-  acceptTerms: yup.boolean().oneOf([true], "پذیرش قوانین الزامی است"),
+  acceptTerms: yup
+    .boolean()
+    .required("پذیرش قوانین الزامی است")
+    .oneOf([true], "پذیرش قوانین الزامی است"),
 });
 
 type RegisterFormData = yup.InferType<typeof registerSchema>;
@@ -46,6 +50,7 @@ type RegisterFormData = yup.InferType<typeof registerSchema>;
 const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { register: registerUser } = useAuth();
 
   const {
     register,
@@ -59,32 +64,27 @@ const Register = () => {
     try {
       setIsLoading(true);
 
-      // TODO: Replace with actual API call
-      console.log("Register data:", data);
+      // Call the register function from AuthContext
+      await registerUser({
+        email: data.email,
+        username: data.username,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Simulate successful registration
       toast.success("ثبت نام با موفقیت انجام شد! 🎉");
-
-      // Save user data to localStorage (temporary)
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: 1,
-          name: `${data.firstName} ${data.lastName}`,
-          email: data.email,
-          phone: data.phone,
-          role: "user",
-        })
-      );
 
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (error) {
-      toast.error("خطا در ثبت نام! لطفاً دوباره تلاش کنید.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "خطا در ثبت نام! لطفاً دوباره تلاش کنید.";
+
+      toast.error(errorMessage);
       console.error("Register error:", error);
     } finally {
       setIsLoading(false);
@@ -139,13 +139,13 @@ const Register = () => {
         />
 
         <Input
-          {...register("phone")}
-          label="شماره موبایل"
-          type="tel"
-          placeholder="09123456789"
-          error={errors.phone?.message}
-          icon={<Phone />}
-          autoComplete="tel"
+          {...register("username")}
+          label="نام کاربری"
+          type="text"
+          placeholder="نام کاربری منحصر به فرد"
+          error={errors.username?.message}
+          icon={<User />}
+          autoComplete="username"
         />
 
         <Input
